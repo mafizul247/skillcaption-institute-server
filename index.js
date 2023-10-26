@@ -27,6 +27,17 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
 
+        const userCollections = client.db('skillDB').collection('users');
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const saveUser = await userCollections.findOne(user);
+            if (saveUser) {
+                return res.send({ exist: true })
+            }
+            const result = await userCollections.insertOne(user);
+            res.send(result)
+        })
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
