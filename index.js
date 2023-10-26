@@ -29,6 +29,12 @@ async function run() {
 
         const userCollections = client.db('skillDB').collection('users');
 
+        // User Collections 
+        app.get('/users', async (req, res) => {
+            const result = await userCollections.find({}).toArray();
+            res.send(result);
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const saveUser = await userCollections.findOne(user);
