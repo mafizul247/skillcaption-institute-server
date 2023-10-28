@@ -1,7 +1,7 @@
 const express = require('express');
 const dotenv = require('dotenv').config();
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -33,11 +33,6 @@ async function run() {
         const teamCollections = client.db('skillDB').collection('team');
         const commentCollections = client.db('skillDB').collection('comments');
 
-        // User Collections 
-        app.get('/users', async (req, res) => {
-            const result = await userCollections.find({}).toArray();
-            res.send(result);
-        })
 
         // Instructros
         app.get('/instructors', async (req, res) => {
@@ -76,6 +71,13 @@ async function run() {
             res.send(result);
         })
 
+        app.delete('/deleteClass/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await selectedClassCollections.deleteOne(query);
+            res.send(result);
+        })
+
         // classess 
         app.get('/classes', async (req, res) => {
             const classes = await classCollections.find({}).sort({ students: -1 }).toArray();
@@ -92,6 +94,12 @@ async function run() {
         // Comments
         app.get('/comments', async (req, res) => {
             const result = await commentCollections.find({}).toArray();
+            res.send(result);
+        })
+
+        // Admin 
+        app.get('/users', async (req, res) => {
+            const result = await userCollections.find({}).toArray();
             res.send(result);
         })
 
