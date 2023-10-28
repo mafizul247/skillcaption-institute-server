@@ -29,6 +29,7 @@ async function run() {
 
         const userCollections = client.db('skillDB').collection('users');
         const classCollections = client.db('skillDB').collection('classes');
+        const teamCollections = client.db('skillDB').collection('team');
 
         // User Collections 
         app.get('/users', async (req, res) => {
@@ -57,6 +58,12 @@ async function run() {
             const classes = await classCollections.find({}).sort({ students: -1 }).toArray();
             const approvedClasses = classes.filter(signgleClass => signgleClass.status === 'approved');
             res.send(approvedClasses);
+        })
+
+        // Team Members
+        app.get('/team', async (req, res) => {
+            const result = await teamCollections.find({}).toArray();
+            res.send(result);
         })
 
         // Send a ping to confirm a successful connection
