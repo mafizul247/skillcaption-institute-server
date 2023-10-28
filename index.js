@@ -29,7 +29,9 @@ async function run() {
 
         const userCollections = client.db('skillDB').collection('users');
         const classCollections = client.db('skillDB').collection('classes');
+        const selectedClassCollections = client.db('skillDB').collection('selectedClass');
         const teamCollections = client.db('skillDB').collection('team');
+        const commentCollections = client.db('skillDB').collection('comments');
 
         // User Collections 
         app.get('/users', async (req, res) => {
@@ -43,6 +45,7 @@ async function run() {
             res.send(result);
         })
 
+        // Users 
         app.post('/users', async (req, res) => {
             const user = req.body;
             const saveUser = await userCollections.findOne(user);
@@ -51,6 +54,26 @@ async function run() {
             }
             const result = await userCollections.insertOne(user);
             res.send(result)
+        })
+
+        app.post('/selectedClass/:email', async (req, res) => {
+            const selectedClass = req.body;
+            console.log(selectedClass.email);
+            const query = { email: selectedClass.email };
+            const existClass = await selectedClassCollections.find(query).toArray();
+            const isExist = existClass.find(ec => ec.classId === selectedClass.classId);
+            if (isExist) {
+                return res.send({ isExist: true })
+            };
+            const result = await selectedClassCollections.insertOne(selectedClass);
+            res.send(result);
+        });
+
+        app.get('/selectedClass/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email, payment: false };
+            const result = await selectedClassCollections.find(query).toArray();
+            res.send(result);
         })
 
         // classess 
@@ -63,6 +86,12 @@ async function run() {
         // Team Members
         app.get('/team', async (req, res) => {
             const result = await teamCollections.find({}).toArray();
+            res.send(result);
+        })
+
+        // Comments
+        app.get('/comments', async (req, res) => {
+            const result = await commentCollections.find({}).toArray();
             res.send(result);
         })
 
