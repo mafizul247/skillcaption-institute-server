@@ -36,6 +36,12 @@ async function run() {
             res.send(result);
         })
 
+        // Instructros
+        app.get('/instructors', async (req, res) => {
+            const result = await userCollections.find({ role: "instructor" }).sort({ students: -1 }).toArray();
+            res.send(result);
+        })
+
         app.post('/users', async (req, res) => {
             const user = req.body;
             const saveUser = await userCollections.findOne(user);
@@ -48,7 +54,7 @@ async function run() {
 
         // classess 
         app.get('/classes', async (req, res) => {
-            const classes = await classCollections.find({}).sort({ seat: 1 }).toArray();
+            const classes = await classCollections.find({}).sort({ students: -1 }).toArray();
             const approvedClasses = classes.filter(signgleClass => signgleClass.status === 'approved');
             res.send(approvedClasses);
         })
