@@ -58,9 +58,9 @@ async function run() {
             res.send({ token })
         })
 
-         // adminVerify
+        // adminVerify
 
-         const VerifyAdmin = async (req, res, next) => {
+        const VerifyAdmin = async (req, res, next) => {
             const email = req.decoded.email;
             const query = { email: email }
             const user = await userCollections.findOne(query)
@@ -130,6 +130,25 @@ async function run() {
             };
             const user = await userCollections.findOne(query);
             const result = { instructor: user?.role === 'instructor' };
+            res.send(result);
+        })
+
+        app.post('/addNewClass', VerifyJwt, VerifyInstructor, async (req, res) => {
+            const addNewClass = req.body;
+            addNewClass.price = parseInt(addNewClass.price);
+            addNewClass.seats = parseInt(addNewClass.seats);
+            addNewClass.students = 0;
+            addNewClass.newClass = 'true';
+            addNewClass.EntryDate = new Date();
+            const result = await classCollections.insertOne(addNewClass);
+            res.send(result);
+            // console.log(addNewClass);
+        })
+
+        app.get('/myClasses/:email', VerifyJwt, VerifyInstructor, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            const result = await classCollections.find(query).toArray();
             res.send(result);
         })
 
