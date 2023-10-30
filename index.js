@@ -58,12 +58,29 @@ async function run() {
             res.send({ token })
         })
 
+         // adminVerify
 
-        // Instructros
-        app.get('/instructors', async (req, res) => {
-            const result = await userCollections.find({ role: "instructor" }).sort({ students: -1 }).toArray();
-            res.send(result);
-        })
+         const VerifyAdmin = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await userCollections.findOne(query)
+            if (user?.role !== 'admin') {
+                return res.status(401).send({ message: 'Unauthorized' })
+            }
+            next()
+        }
+
+        // instructorVerify
+
+        const VerifyInstructor = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email }
+            const user = await userCollections.findOne(query)
+            if (user?.role !== 'instructor') {
+                return res.status(401).send({ message: 'Unauthorized' })
+            }
+            next()
+        }
 
         // Users 
         app.post('/users', async (req, res) => {
@@ -73,7 +90,7 @@ async function run() {
                 return res.send({ exist: true })
             }
             const result = await userCollections.insertOne(user);
-            res.send(result)
+            res.send(result);
         })
 
         app.post('/selectedClass/:email', async (req, res) => {
@@ -104,6 +121,42 @@ async function run() {
             res.send(result);
         })
 
+        // Instructros
+        app.get('/instructor/:email', VerifyJwt, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            if (req.decoded.email !== email) {
+                return res.send({ instructor: false })
+            };
+            const user = await userCollections.findOne(query);
+            const result = { instructor: user?.role === 'instructor' };
+            res.send(result);
+        })
+
+        // Admin
+        app.get('/admin/:email', VerifyJwt, async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email };
+            if (req.decoded.email !== email) {
+                return res.send({ admin: false })
+            }
+            const user = await userCollections.findOne(query);
+            const result = { admin: user?.role === 'admin' };
+            res.send(result);
+        })
+
+        app.get('/users', VerifyJwt, async (req, res) => {
+            const result = await userCollections.find({}).toArray();
+            res.send(result);
+        })
+
+
+        // common     
+        app.get('/instructors', async (req, res) => {
+            const result = await userCollections.find({ role: "instructor" }).sort({ students: -1 }).toArray();
+            res.send(result);
+        })
+
         // classess 
         app.get('/classes', async (req, res) => {
             const classes = await classCollections.find({}).sort({ students: -1 }).toArray();
@@ -123,11 +176,7 @@ async function run() {
             res.send(result);
         })
 
-        // Admin 
-        app.get('/users', async (req, res) => {
-            const result = await userCollections.find({}).toArray();
-            res.send(result);
-        })
+
 
         // Send a ping to confirm a successful connection
         await client.db("admin").command({ ping: 1 });
