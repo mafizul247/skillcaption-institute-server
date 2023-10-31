@@ -148,7 +148,7 @@ async function run() {
         app.get('/myClasses/:email', VerifyJwt, VerifyInstructor, async (req, res) => {
             const email = req.params.email;
             const query = { email: email };
-            const result = await classCollections.find(query).toArray();
+            const result = await classCollections.find(query).sort({ EntryDate: -1 }).toArray();
             res.send(result);
         })
 
@@ -164,8 +164,82 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/users', VerifyJwt, async (req, res) => {
+        app.get('/users', VerifyJwt, VerifyAdmin, async (req, res) => {
             const result = await userCollections.find({}).toArray();
+            res.send(result);
+        })
+
+        app.get('/instructorNewClass/:newClass', VerifyJwt, VerifyAdmin, async (req, res) => {
+            const newClass = req.params.newClass;
+            const query = { newClass: newClass };
+            const result = await classCollections.find(query).sort({ EntryDate: -1 }).toArray();
+            res.send(result);
+        })
+
+        app.patch('/makeInstructor/:id', VerifyJwt, VerifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const instructor = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateInstructor = {
+                $set: {
+                    updateRole: instructor.updateRole,
+                    role: instructor.role
+                }
+            };
+            const result = await userCollections.updateOne(filter, updateInstructor);
+            res.send(result);
+        })
+
+        app.patch(`/makeAdmin/:id`, VerifyJwt, VerifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const admin = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateAdmin = {
+                $set: {
+                    updateRole: admin.updateRole,
+                    role: admin.role
+                }
+            }
+            const result = await userCollections.updateOne(filter, updateAdmin);
+            res.send(result);
+        })
+
+        app.patch('/approvedClass/:id', VerifyJwt, VerifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const approdeClass = req.body;
+            const updateClass = {
+                $set: {
+                    status: approdeClass.status
+                }
+            };
+            const result = await classCollections.updateOne(filter, updateClass);
+            res.send(result);
+        })
+
+        app.patch('/denyClass/:id', VerifyJwt, VerifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const denyClass = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateClass = {
+                $set: {
+                    status: denyClass.status
+                }
+            };
+            const result = await classCollections.updateOne(filter, updateClass);
+            res.send(result);
+        })
+
+        app.patch('/feedbackClass/:id', VerifyJwt, VerifyAdmin, async (req, res) => {
+            const id = req.params.id;
+            const updateData = req.body;
+            const filter = { _id: new ObjectId(id) };
+            const updateFeeback = {
+                $set: {
+                    feedback: updateData.feedback
+                }
+            };
+            const result = await classCollections.updateOne(filter, updateFeeback);
             res.send(result);
         })
 
