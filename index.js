@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv').config();
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const stripe = require("stripe")(process.env.PAYMENT_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -85,6 +86,7 @@ async function run() {
         // Users 
         app.post('/users', async (req, res) => {
             const user = req.body;
+            user.EntryDate = new Date();
             const saveUser = await userCollections.findOne(user);
             if (saveUser) {
                 return res.send({ exist: true })
@@ -96,6 +98,7 @@ async function run() {
         app.post('/selectedClass/:email', async (req, res) => {
             const selectedClass = req.body;
             // console.log(selectedClass.email);
+            selectedClass.EntryDate = new Date();
             const query = { email: selectedClass.email };
             const existClass = await selectedClassCollections.find(query).toArray();
             const isExist = existClass.find(ec => ec.classId === selectedClass.classId);
@@ -110,7 +113,7 @@ async function run() {
             const email = req.params.email;
             // console.log(req.headers.authorization);
             const query = { email: email, payment: false };
-            const result = await selectedClassCollections.find(query).toArray();
+            const result = await selectedClassCollections.find(query).sort({ EntryDate: -1 }).toArray();
             res.send(result);
         })
 
@@ -120,6 +123,63 @@ async function run() {
             const result = await selectedClassCollections.deleteOne(query);
             res.send(result);
         })
+
+        app.patch('/payment/:id', VerifyJwt, async (req, res) => {
+            const id = req.params.id
+            const { payment, date, seats, students, timestamp, TransactionId } = req.body;
+            const filter = { _id: new ObjectId(id) }
+            const updateDoc = {
+                $set: {
+                    payment: payment,
+                    date: date,
+                    seats: parseInt(seats) - 1,
+                    students: parseInt(students) + 1,
+                    timestamp: timestamp,
+                    TransactionId: TransactionId
+                },
+            };
+            const result = await selectedClassCollections.updateOne(filter, updateDoc)
+            res.send(result);
+        })
+
+        app.patch('/updateClass/:classId', VerifyJwt, async (req, res) => {
+            const id = req.params.classId
+            const filter = { _id: new ObjectId(id) }
+            const { seats, students } = req.body
+            const updateDoc = {
+                $set: {
+                    seats: parseInt(seats) - 1,
+                    students: parseInt(students) + 1,
+                },
+            };
+
+            const result = await classCollections.updateOne(filter, updateDoc)
+            res.send(result)
+        })
+
+        app.get('/enrolledClass/:email', VerifyJwt, async (req, res) => {
+            const email = req.params.email
+            const query = { email: email, payment: true }
+            const result = await selectedClassCollections.find(query).sort({ timestamp: -1 }).toArray();
+            res.send(result)
+        })
+
+
+        app.post("/create-payment-intent", VerifyJwt, async (req, res) => {
+            const { price } = req.body;
+            const amount = price * 100
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                "payment_method_types": [
+                    "card"
+                ],
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
 
         // Instructros
         app.get('/instructor/:email', VerifyJwt, async (req, res) => {
